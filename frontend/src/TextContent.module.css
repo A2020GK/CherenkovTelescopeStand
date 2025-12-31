@@ -1,0 +1,12 @@
+.textContent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.container {
+    border: 2px solid black;
+    padding: 20px 100px;
+    background-color: #a0a0a0;
+    color: black;
+    border-radius: 10px;
+}
