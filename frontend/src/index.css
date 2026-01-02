@@ -63,7 +63,12 @@ header ul li {
 main {
     width: 100%;
     height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
 }
+
 footer {
     height: 20px;
     background-color: black;
@@ -73,32 +78,89 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}   
+}
+
 footer a {
     text-decoration: none;
     color: whitesmoke;
 }
+
 footer a:hover {
     color: lightblue;
 }
+
 footer div :nth-child(2) {
     text-align: right;
 }
+
 .status {
     margin-left: 10px;
     font-family: monospace;
 }
+
 table {
     border-collapse: collapse;
 }
-table, th, td {
+
+table,
+th,
+td {
     border: 1px solid black;
     text-align: center;
+    padding: 5px 10px;
 }
+
 th {
     background-color: gray;
     color: black;
 }
+
 td {
     background-color: white;
+}
+
+.settings {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.settings > div {
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+
+.settings.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.settings.open > div {
+    transform: scale(1);
+}
+
+.text-container, .settings div {
+    border: 2px solid black;
+    padding: 20px 100px;
+    background-color: #a0a0a0;
+    color: black;
+    border-radius: 10px;
+}
+
+.plot {
+    margin: 5px;
+}
+
+svg {
+    border-radius: 5px;
 }

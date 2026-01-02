@@ -23,6 +23,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/react-plotly.js": "^2.6.4",
     "@vitejs/plugin-react": "^5.1.1",
     "globals": "^16.5.0",
     "typescript": "~5.9.3",

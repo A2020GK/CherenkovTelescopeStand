@@ -40,4 +40,5 @@ async def disconnect(sid, *args):
     except:
         pass
     
+from .settings import *
 from .event import *
