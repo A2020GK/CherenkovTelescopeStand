@@ -10,8 +10,9 @@ export const EventList = () => {
 
     useEffect(() => { (async () => setEvents((await api.get("/event/list")).data))() }, [setEvents])
 
-    return <>
+    return <>       
         <TextContent>
+            <p className="logo"><img src="/favicon.ico" alt="Icon" width={24 * 2} /></p>
             <h2>Список событий</h2>
             <table width="100%">
                 <thead>

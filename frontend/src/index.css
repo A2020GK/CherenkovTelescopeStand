@@ -212,3 +212,11 @@ svg {
     background-color: lightblue;
     color: black;
 }
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.logo img {
+    border-radius: 10px;
+}
