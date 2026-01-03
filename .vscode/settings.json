@@ -1,3 +1,4 @@
 {
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "vite.devCommand": "cd frontend && npx vite --port 4000"
 }

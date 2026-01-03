@@ -6,9 +6,6 @@ import { Status, StatusProvider } from "./Status"
 import { Settings, SettingsProvider } from "./Settings"
 
 export const App = ({ children }: { children: ReactNode }) => {
-
-
-
     return <>
         <StatusProvider>
             <SettingsProvider>

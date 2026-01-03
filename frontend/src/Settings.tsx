@@ -6,6 +6,7 @@ export interface Settings {
     chToColMap: Record<number, number> // Maps channels (and plots) to columns
     // (5 channels, 8 columns, 3 columns = garbage)
     channelsNames?: Record<number, string>
+    channelsDisplay?: Record<number, boolean>
 }
 
 interface SettingsContextType {
@@ -13,44 +14,49 @@ interface SettingsContextType {
     setOpen: (open: boolean) => void
     settings: Settings
     setSettings: (settings: Settings) => void
+    hasLoaded: boolean
 }
 
 export const SettingsContext = createContext<SettingsContextType>({
     open: false,
     setOpen: () => { },
-    settings: { chToColMap: { } },
-    setSettings: () => { }
+    settings: { chToColMap: {} },
+    setSettings: () => { },
+    hasLoaded: false
 })
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const [open, setOpen] = useState(false)
-    const [settings, setSettings] = useState<Settings>({ chToColMap: { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }, channelsNames: { 0: "Канал 1", 1: "Канал 2", 2: "Канал 3", 3: "Канал 4", 4: "Канал 5" } })
+    const [hasLoaded, setHasLoaded] = useState(false)
+    const [settings, setSettings] = useState<Settings>({ chToColMap: { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }, channelsNames: { 0: "Канал 1", 1: "Канал 2", 2: "Канал 3", 3: "Канал 4", 4: "Канал 5" }, channelsDisplay: { 0: true, 1: true, 2: true, 3: true, 4: true } })
 
     useEffect(() => {
         (async () => {
-            setSettings((await api.get("/settings")).data);
+            const loaded = (await api.get("/settings")).data
+            setSettings(loaded)
+            setHasLoaded(true)
             console.log("Settings loaded");
         })()
     }, []);
 
     return (
-        <SettingsContext.Provider value={{ open, setOpen, settings, setSettings }}>
+        <SettingsContext.Provider value={{ open, setOpen, settings, setSettings, hasLoaded }}>
             {children}
         </SettingsContext.Provider>
     )
 }
 
 export const Settings = () => {
-    const { open, setOpen, settings, setSettings } = useContext(SettingsContext);
+    const { open, setOpen, settings, setSettings, hasLoaded } = useContext(SettingsContext);
 
     useEffect(() => {
-        if (!open) {
+        if (!open && hasLoaded) {
             (async () => {
                 await api.post("/settings", settings);
                 console.log("Settings saved");
             })()
         }
-    }, [open, settings]);
+    }, [open, settings, hasLoaded]);
 
     const handleChannelChange = (channel: number, column: number) => {
         setSettings({
@@ -72,12 +78,22 @@ export const Settings = () => {
         })
     }
 
+    const handleChannelDisplayChange = (channel: number, display: boolean) => {
+        setSettings({
+            ...settings,
+            channelsDisplay: {
+                ...settings.channelsDisplay,
+                [channel]: display
+            }
+        })
+    }
+
     const handleClose = () => {
         // Validate: convert empty values to 0
         const validatedSettings = {
             ...settings,
             chToColMap: Object.fromEntries(
-                Object.entries(settings.chToColMap).map(([ch, col]) => 
+                Object.entries(settings.chToColMap).map(([ch, col]) =>
                     [ch, col === -1 ? 0 : col]
                 )
             )
@@ -85,7 +101,7 @@ export const Settings = () => {
         setSettings(validatedSettings);
         setOpen(false);
     }
-
+    
     return (
         <div className={`settings${open ? " open" : ""}`} onClick={handleClose}>
             <TextContent
@@ -99,6 +115,7 @@ export const Settings = () => {
                 <table>
                     <thead>
                         <tr>
+                            <th>Отображать</th>
                             <th>Канал</th>
                             <th>Имя</th>
                             <th>Столбец в файле</th>
@@ -107,6 +124,13 @@ export const Settings = () => {
                     <tbody>
                         {Object.keys(settings.chToColMap).map((channel) => (
                             <tr key={channel}>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.channelsDisplay?.[Number(channel)] ?? true}
+                                        onChange={(e) => handleChannelDisplayChange(Number(channel), e.target.checked)}
+                                    />
+                                </td>
                                 <td>Канал {Number(channel) + 1}</td>
                                 <td>
                                     <input
