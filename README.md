@@ -206,4 +206,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-Developed by [Antony](https://github.com/A2020GK/CherenkovTelescopeStand)
+Developed by [Antony](https://github.com/A2020GK)
