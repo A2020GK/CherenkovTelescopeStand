@@ -40,5 +40,8 @@ app.add_middleware(
 #     except:
 #         pass
     
-from .settings import *
-from .event import *
+from .settings import router as settings_router
+from .event import router as event_router
+
+app.include_router(event_router)
+app.include_router(settings_router)

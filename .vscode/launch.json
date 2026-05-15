@@ -8,10 +8,11 @@
             "name": "Отладчик Python: FastAPI",
             "type": "debugpy",
             "request": "launch",
-            "module": "uvicorn",
+            "module": "fastapi",
             "args": [
-                "backend:app",
-                "--reload"
+                "dev",
+                "--host",
+                "0.0.0.0"
             ],
             "jinja": true
         },

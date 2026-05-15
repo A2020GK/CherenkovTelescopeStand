@@ -1,7 +1,9 @@
-from . import app
+from fastapi import APIRouter
 from .utils import BaseSchema
 import json
 import os
+
+router = APIRouter(prefix="/settings")
 
 
 class Settings(BaseSchema):
@@ -17,7 +19,7 @@ def _default_settings() -> Settings:
         channels_display={i: True for i in range(0, 5)},
     )
 
-@app.get("/settings", tags=["Settings"], description="Get current application settings.")
+@router.get("/", tags=["Settings"], description="Get current application settings.")
 def get_settings() -> Settings:
     try:
         with open("settings.json", "r", encoding='utf-8') as f:
@@ -29,7 +31,7 @@ def get_settings() -> Settings:
             json.dump(settings.model_dump(), f, indent=4, ensure_ascii=False)
     return settings
 
-@app.post("/settings", tags=["Settings"], description="Update application settings.")
+@router.post("/", tags=["Settings"], description="Update application settings.")
 def update_settings(settings: Settings) -> Settings:
     with open("settings.json", "w", encoding='utf-8') as f:
         json.dump(settings.model_dump(), f, indent=4, ensure_ascii=False)
