@@ -7,14 +7,16 @@ import Plot from "react-plotly.js";
 import { TextContent } from "./TextContent";
 import type { Layout } from "plotly.js";
 import { SettingsContext } from "./Settings";
+import type { FC } from "react";
 
-export const Event = () => {
-    const { eventName } = useParams<{ eventName: string }>();
+export const Event: FC = () => {
+    const params = useParams<{ eventName?: string }>();
+    const eventName = params.eventName;
     const [, setStatus] = useContext(StatusContext);
-    const [event, setEvent] = useState<EventType>({ name: eventName || "", data: undefined });
+    const [event, setEvent] = useState<EventType | null>(null);
     const { settings } = useContext(SettingsContext);
 
-    const plotGroup = useRef<HTMLDivElement>(null);
+    const plotGroup = useRef<HTMLDivElement | null>(null);
     const [plotGroupSize, setPlotGroupSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
     // Need to collect plot group div and use its offsets for plot sizing
@@ -30,26 +32,28 @@ export const Event = () => {
         resizeObserver.observe(element);
 
         return () => resizeObserver.disconnect();
-    }, [event.data]);
+    }, [event?.data]);
 
+    // Load event when eventName changes
     useEffect(() => {
-        console.log(`Loading event ${eventName}...`);
-        setStatus(`Загрузка события ${event.name}...`);
-    }, [eventName])
-    useEffect(() => {
+        if (!eventName) return;
+        setStatus(`Загрузка события ${eventName}...`);
+
         (async () => {
-            setEvent((await api.get(`/event/${eventName}`)).data);
-            console.log(`Event ${event.name} loaded`);
-            setStatus(`Событие ${event.name} загружено`);
-        })()
-    }, [setEvent]);
+            try {
+                const response = await api.get(`/event/${eventName}`);
+                setEvent(response.data);
+                setStatus(`Событие ${response.data.name} загружено`);
+            } catch (err) {
+                setStatus(`Ошибка загрузки ${eventName}`);
+            }
+        })();
+    }, [eventName, setStatus]);
 
-
-    // Calculate visible channels before rendering
+    // Calculate visible channels
     const visibleChannels = Object.entries(settings.chToColMap).filter(([chStr]) => {
-        const ch = parseInt(chStr);
-        const shouldDisplay = settings.channelsDisplay?.[ch] ?? true;
-        return shouldDisplay;
+        const ch = parseInt(chStr, 10);
+        return settings.channelsDisplay?.[ch] ?? true;
     });
 
     const plotCount = visibleChannels.length;
@@ -57,33 +61,40 @@ export const Event = () => {
 
     // Plot layout settings, + margin: 5px for plot container in CSS
     const layout: Partial<Layout> = { width: plotGroupSize.width - 20, height: plotGroupSize.height / normalizedPlotCount - 20, margin: { t: 20, b: 20, r: 20 } };
-
     const titleLayout: Partial<Layout['title']> = { yanchor: "middle" };
 
-    const PlotEl = ({ index, data, chName }: { index: number, data: number[], chName: string }) => <Plot layout={{ ...layout, title: { text: `Канал ${index + 1} (${chName})`, ...titleLayout } }} data={[{ y: data }]} />
+    const PlotEl: FC<{ index: number; data: number[]; chName: string }> = ({ index, data, chName }) => (
+        <Plot layout={{ ...layout, title: { text: `Канал ${index + 1} (${chName})`, ...titleLayout } }} data={[{ y: data }]} />
+    );
 
+    if (!event || !event.data) {
+        return <TextContent>
+            <p>Загрузка события...</p>
+        </TextContent>;
+    }
 
+    return (
+        <>
+            <div className="plot-group" ref={plotGroup}>
+                {visibleChannels.map(([chStr, col]) => {
+                    const ch = parseInt(chStr, 10);
+                    const chName = settings.channelsNames?.[ch] ?? `Канал ${ch + 1}`;
+                    const series = event.data![col];
+                    return (
+                        <div className="plot" key={ch}>
+                            <PlotEl index={ch} data={series} chName={chName} />
+                        </div>
+                    );
+                })}
+            </div>
 
-    return event.data ? <>
-        <div className="plot-group" ref={plotGroup}>
-
-            {/* Render pre-filtered visible channels */}
-            {visibleChannels.map(([chStr, col]) => {
-                const ch = parseInt(chStr);
-                const chName = settings.channelsNames && settings.channelsNames[ch] ? settings.channelsNames[ch] : `Канал ${ch + 1}`;
-                return <div className="plot" key={ch}><PlotEl index={ch} data={event.data![col]} chName={chName} /></div>
-            })}
-
-        </div>
-        <div className="sidebar">
-            <h3>Действа</h3>
-            <ul>
-                <li><button>Кнопко раз</button></li>
-                <li><button>Кнопко два</button></li>
-            </ul>
-        </div>
-
-    </> : <TextContent>
-        <p>Загрузка события...</p>
-    </TextContent>
-}
+            <div className="sidebar">
+                <h3>Действия</h3>
+                <ul>
+                    <li><button>Кнопка 1</button></li>
+                    <li><button>Кнопка 2</button></li>
+                </ul>
+            </div>
+        </>
+    );
+};

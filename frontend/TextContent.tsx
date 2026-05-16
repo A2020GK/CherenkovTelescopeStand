@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
+import type { ReactNode, HTMLAttributes } from "react";
 
-export const TextContent = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => {
-    return <div className="text-container" {...props}>
-        {children}
-    </div>
-}
+export const TextContent = ({ children, ...props }: { children: ReactNode } & HTMLAttributes<HTMLDivElement>) => {
+    return (
+        <div className="text-container" {...props}>
+            {children}
+        </div>
+    );
+};

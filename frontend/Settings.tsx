@@ -58,6 +58,18 @@ export const Settings = () => {
         }
     }, [open, settings, hasLoaded]);
 
+    // Close settings on Escape key
+    useEffect(() => {
+        if (!open) return;
+
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [open, setOpen]);
+
     const handleChannelChange = (channel: number, column: number) => {
         setSettings({
             ...settings,
