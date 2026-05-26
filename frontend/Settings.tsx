@@ -1,6 +1,5 @@
 import { createContext, useState, useContext, type ReactNode, type MouseEvent, useEffect } from 'react'
 import { TextContent } from './TextContent'
-import { api } from './api'
 
 export interface Settings {
     chToColMap: Record<number, number> // Maps channels (and plots) to columns
@@ -8,6 +7,20 @@ export interface Settings {
     channelsNames?: Record<number, string>
     channelsDisplay?: Record<number, boolean>
 }
+
+const STORAGE_KEY = 'cherenkov-telescope-stand.settings'
+
+const DEFAULT_SETTINGS: Settings = {
+    chToColMap: { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 },
+    channelsNames: { 0: 'Канал 1', 1: 'Канал 2', 2: 'Канал 3', 3: 'Канал 4', 4: 'Канал 5' },
+    channelsDisplay: { 0: true, 1: true, 2: true, 3: true, 4: true }
+}
+
+const normalizeSettings = (settings?: Partial<Settings> | null): Settings => ({
+    chToColMap: { ...DEFAULT_SETTINGS.chToColMap, ...(settings?.chToColMap ?? {}) },
+    channelsNames: { ...DEFAULT_SETTINGS.channelsNames, ...(settings?.channelsNames ?? {}) },
+    channelsDisplay: { ...DEFAULT_SETTINGS.channelsDisplay, ...(settings?.channelsDisplay ?? {}) }
+})
 
 interface SettingsContextType {
     open: boolean
@@ -20,7 +33,7 @@ interface SettingsContextType {
 export const SettingsContext = createContext<SettingsContextType>({
     open: false,
     setOpen: () => { },
-    settings: { chToColMap: {} },
+    settings: DEFAULT_SETTINGS,
     setSettings: () => { },
     hasLoaded: false
 })
@@ -28,15 +41,19 @@ export const SettingsContext = createContext<SettingsContextType>({
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const [open, setOpen] = useState(false)
     const [hasLoaded, setHasLoaded] = useState(false)
-    const [settings, setSettings] = useState<Settings>({ chToColMap: { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }, channelsNames: { 0: "Канал 1", 1: "Канал 2", 2: "Канал 3", 3: "Канал 4", 4: "Канал 5" }, channelsDisplay: { 0: true, 1: true, 2: true, 3: true, 4: true } })
+    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
 
     useEffect(() => {
-        (async () => {
-            const loaded = (await api.get("/settings")).data
-            setSettings(loaded)
+        try {
+            const rawSettings = window.localStorage.getItem(STORAGE_KEY)
+            if (rawSettings) {
+                setSettings(normalizeSettings(JSON.parse(rawSettings) as Partial<Settings>))
+            }
+        } catch {
+            setSettings(DEFAULT_SETTINGS)
+        } finally {
             setHasLoaded(true)
-            console.log("Settings loaded");
-        })()
+        }
     }, []);
 
     return (
@@ -49,12 +66,26 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 export const Settings = () => {
     const { open, setOpen, settings, setSettings, hasLoaded } = useContext(SettingsContext);
 
+    const handleClose = () => {
+        const validatedSettings = {
+            ...settings,
+            chToColMap: Object.fromEntries(
+                Object.entries(settings.chToColMap).map(([ch, col]) =>
+                    [ch, col === -1 ? 0 : col]
+                )
+            )
+        };
+        setSettings(validatedSettings);
+        setOpen(false);
+    }
+
     useEffect(() => {
         if (!open && hasLoaded) {
-            (async () => {
-                await api.post("/settings", settings);
-                console.log("Settings saved");
-            })()
+            try {
+                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+            } catch {
+                // Ignore storage write failures.
+            }
         }
     }, [open, settings, hasLoaded]);
 
@@ -63,12 +94,12 @@ export const Settings = () => {
         if (!open) return;
 
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") setOpen(false);
+            if (e.key === "Escape") handleClose();
         };
 
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [open, setOpen]);
+    }, [open, handleClose]);
 
     const handleChannelChange = (channel: number, column: number) => {
         setSettings({
@@ -100,20 +131,6 @@ export const Settings = () => {
         })
     }
 
-    const handleClose = () => {
-        // Validate: convert empty values to 0
-        const validatedSettings = {
-            ...settings,
-            chToColMap: Object.fromEntries(
-                Object.entries(settings.chToColMap).map(([ch, col]) =>
-                    [ch, col === -1 ? 0 : col]
-                )
-            )
-        };
-        setSettings(validatedSettings);
-        setOpen(false);
-    }
-    
     return (
         <div className={`settings${open ? " open" : ""}`} onClick={handleClose}>
             <TextContent
