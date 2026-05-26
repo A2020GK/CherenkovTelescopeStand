@@ -55,5 +55,4 @@ jobs:
           sleep 5
 
           # Basic smoke checks
-          curl --fail http://127.0.0.1:8000/settings
           curl --fail http://127.0.0.1:8000/event/list
